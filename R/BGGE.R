@@ -42,8 +42,7 @@
 #' 
 #' 
 #' @examples 
-#' 
-#' # Fitting single environment model
+#' # multi-environment main genotypic model
 #' library(BGLR)
 #' data(wheat)
 #' X<-wheat.X[1:200,1:600]  # Subset of 200 subjects and 600 markers
@@ -65,7 +64,7 @@
 #' K <- getK(Y = pheno_geno, X = X, kernel = "GB", model = "MM")
 #' y <- pheno_geno[,3]
 #' fit <- BGGE(y = y, K = K, ne = rep(nrow(Y), length(Env)), ite = 300, burn = 100,thin = 1)
-
+#' 
 #' 
 #' @seealso 
 #' \code{\link[BGLR]{BGLR}}
@@ -359,9 +358,6 @@ BGGE <- function(y, K, XF = NULL, ne, ite = 1000, burn = 200, thin = 3, verbose 
       # Sampling scale hyperparameters and variance of genetic effects
       Sc[j] <- dcondSc(nu, sigb[j])
       sigb[j] <- dcondsigb(b, deltav, nr, nu, Sc[j])
-      #sigb.mcmc[i, j] <- sigb[j]
-      #u.mcmc[i, , j] <- u[[j]]
-      #u.mcmc[[j]][i,] <- u[[j]]
     }
     
     # Sampling residual variance 
@@ -369,7 +365,6 @@ BGGE <- function(y, K, XF = NULL, ne, ite = 1000, burn = 200, thin = 3, verbose 
     Sce <- dcondSc(nu, sigsq)
     sigsq <- dcondsigsq(res, n, nu, Sce)
     tau <- 1 / sigsq
-    #sigsq.mcmc[i] <- sigsq
     
     # Predicting missing values
     if(nNa > 0){

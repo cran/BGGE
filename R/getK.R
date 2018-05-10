@@ -2,7 +2,7 @@
 #' 
 #' Create kernel matrix for GE genomic prediction models 
 #'
-#' @usage getK(Y, X, kernel = c("GK", "GB"), setKernel = NULL, h = 1,
+#' @usage getK(Y, X, kernel = c("GK", "GB"), setKernel = NULL, bandwidth = 1,
 #'              model = c("SM", "MM", "MDs", "MDe"), quantil = 0.5,
 #'              intercept.random = FALSE)
 #'
@@ -11,8 +11,8 @@
 #' @param X Marker matrix with individuals in rows and markers in columns. Missing markers are not allowed.
 #' @param kernel Kernel to be created internally. Methods currently implemented are the Gaussian \code{GK} and the linear \code{GBLUP} kernel
 #' @param setKernel \code{matrix} Single kernel matrix in case it is necessary to use a different kernel from \code{GK} or \code{GBLUP}
-#' @param h \code{vector} Bandwidth parameter to create the Gaussian Kernel (GK) matrix. The default for \code{h} is 1.
-#' Estimation of h can be made using a Bayesian approach as presented in Perez-Elizalde et al. (2015)
+#' @param bandwidth \code{vector} Bandwidth parameter to create the Gaussian Kernel (GK) matrix. The default for the \code{bandwidth} is 1.
+#' Estimation of this parameter can be made using a Bayesian approach as presented in Perez-Elizalde et al. (2015)
 #' @param model Specifies the genotype \eqn{\times} environment model to be fitted. It currently supported the 
 #' models  \code{SM}, \code{MM}, \code{MDs} and \code{MDe}. See Details
 #' @param quantil Specifies the quantile to create the Gaussian kernel.
@@ -27,7 +27,7 @@
 #' Another alternative is the Gaussian Kernel \code{GK}, resulted from:
 #'  \deqn{ GK (x_i, x_{i'}) = exp(\frac{-h d_{ii'}^2}{q(d)})}
 #' where \eqn{d_{ii'}^2} is the genetic distance between individuals based on markers scaled 
-#' by some percentile \eqn{{q(d)}} and \eqn{h} is the bandwidth parameter. However, 
+#' by some percentile \eqn{{q(d)}} and \eqn{bandwidth} is the bandwidth parameter. However, 
 #' other kernels can be provided through \code{setKernel}. In this case, arguments \code{X}, 
 #' \code{kernel} and \code{h} are ignored.
 #' 
@@ -92,11 +92,12 @@
 #' 
 #' 
 #' @export
-getK <- function(Y, X, kernel = c("GK", "GB"), setKernel = NULL, h = 1, model = c("SM", "MM", "MDs", "MDe"), quantil = 0.5,
+getK <- function(Y, X, kernel = c("GK", "GB"), setKernel = NULL, bandwidth = 1, model = c("SM", "MM", "MDs", "MDe"), quantil = 0.5,
                  intercept.random = FALSE)
 {
   #Force to data.frame
   Y <- as.data.frame(Y)
+  
   Y[colnames(Y)[1:2]] <- lapply(Y[colnames(Y)[1:2]], factor)
   
   subjects <- levels(Y[,2])
@@ -124,7 +125,7 @@ getK <- function(Y, X, kernel = c("GK", "GB"), setKernel = NULL, h = 1, model = 
     if(is.null(rownames(X)))
       stop("Genotype names are missing")
     
-    if(!all(subjects %in% rownames(X)))
+    if (!all(subjects %in% rownames(X)))
       stop("Not all genotypes presents in the phenotypic file are in marker matrix")
     
     X <- X[subjects,]
@@ -141,16 +142,15 @@ getK <- function(Y, X, kernel = c("GK", "GB"), setKernel = NULL, h = 1, model = 
              D <- (as.matrix(dist(X))) ^ 2
              
              G <- list()
-             for(i in 1:length(h)){
-               ker.tmp <- exp(-h[i] * D / quantile(D, quantil))
+             for(i in 1:length(bandwidth)){
+               ker.tmp <- exp(-bandwidth[i] * D / quantile(D, quantil))
                #G[[i]] <- Zg %*% tcrossprod(ker.tmp, Zg)
                G[[i]] <- list(Kernel = Zg %*% tcrossprod(ker.tmp, Zg), Type = "D")
-             }
-             names(G) <- seq(length(G))
+               }
              },
            {
              stop("kernel selected is not available. Please choose one method available or make available other kernel through argument K")
-           })
+            })
     }else{
       ## check kernels
       nullNames <- sapply(setKernel, function(x) any(sapply(dimnames(x), is.null)))
@@ -168,6 +168,7 @@ getK <- function(Y, X, kernel = c("GK", "GB"), setKernel = NULL, h = 1, model = 
       ker.tmp <- K
       #G <- list(Zg %*% tcrossprod(ker.tmp, Zg))
       G <- lapply(ker.tmp, function(x) list(Kernel = Zg %*% tcrossprod(x, Zg), Type = "D") )
+      
       
       # Setting names
       if(is.null(names(K))){ 
@@ -204,21 +205,19 @@ getK <- function(Y, X, kernel = c("GK", "GB"), setKernel = NULL, h = 1, model = 
            out.tmp <- list()
            
            for(j in 1:length(G)){
-           out.tmp <- c(out.tmp,
-                        lapply(1:nEnv, function(i){
-                          ZEE[,i] <- Ze[,i]
-                          ZEEZ <- ZEE %*% t(Ze)
-                          #K3 <- G[[j]] * ZEEZ
-                          K3 <- list(Kernel = G[[j]]$Kernel * ZEEZ, Type = "BD")
-                          return(K3)
-                        }) )
+           out.tmp <- c(out.tmp, lapply(1:nEnv, function(i){
+             ZEE[,i] <- Ze[,i]
+             ZEEZ <- ZEE %*% t(Ze)
+             #K3 <- G[[j]] * ZEEZ
+             K3 <- list(Kernel = G[[j]]$Kernel * ZEEZ, Type = "BD")
+             return(K3)
+           }))
            }
            if(length(G) > 1){
              names(out.tmp) <- paste(rep(env, length(G)), rep(tmp.names, each = nEnv), sep = "_" )
            }else{
              names(out.tmp) <-  env 
            }
-           
            out <- c(G, out.tmp)
            }, #DEFAULT CASE
          {
