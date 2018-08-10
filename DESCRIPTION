@@ -1,7 +1,7 @@
 Package: BGGE
 Title: Bayesian Genomic Linear Models Applied to GE Genome Selection
-Version: 0.6.4
-Date: 2018-07-23
+Version: 0.6.5
+Date: 2018-08-10
 Authors@R: c(person("Italo", "Granato", email = "italo.granato@gmail.com", role = c("aut", "cre")),
              person("Luna-Vázquez", "Francisco J.", email = "frahik@gmail.com ", role =c("aut")),
              person("Cuevas", "Jaime", email = "jaicueva@uqroo.edu.mx", role =c("aut")))
@@ -19,10 +19,10 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.0.1
 NeedsCompilation: no
-Packaged: 2018-07-23 18:46:09 UTC; Italo Granato
+Packaged: 2018-08-10 14:54:06 UTC; Italo Granato
 Author: Italo Granato [aut, cre],
   Luna-Vázquez Francisco J. [aut],
   Cuevas Jaime [aut]
 Maintainer: Italo Granato <italo.granato@gmail.com>
 Repository: CRAN
-Date/Publication: 2018-07-23 19:00:02 UTC
+Date/Publication: 2018-08-10 16:40:03 UTC
